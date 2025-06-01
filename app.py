@@ -882,17 +882,13 @@ class IntelligentConfigGenerator:
         return "\n".join(lines)
 
 if __name__ == '__main__':
-    # Get port from environment variable (for Render deployment) or default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    
     print("🚀 Starting Network Configuration Generator Flask Server")
     print("📋 Available endpoints:")
-    print("   GET  /                - Web interface")
+    print("   GET  /                - Web interface") 
     print("   POST /api/generate    - Generate configuration from text")
     print("   POST /api/analyze     - Analyze text and extract entities")
-    print(f"\n🌐 Server will run on port: {port}")
+    print("\n🌐 Server running in production mode")
     print("🛑 Press Ctrl+C to stop the server")
     
-    # Use environment variables for production deployment
-    debug_mode = os.environ.get('FLASK_ENV') != 'production'
-    app.run(debug=debug_mode, host='0.0.0.0', port=port)
+    # Run in production mode for deployment
+    app.run(debug=False, host='0.0.0.0', port=10000)
