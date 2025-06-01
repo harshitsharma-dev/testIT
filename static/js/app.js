@@ -33,15 +33,13 @@ class NetworkConfigApp {
             return;
         }
 
-        this.setLoading(true);
-
-        try {
+        this.setLoading(true);        try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ text: inputText })
+                body: JSON.stringify({ input_text: inputText })
             });
 
             const data = await response.json();
@@ -57,54 +55,54 @@ class NetworkConfigApp {
         } finally {
             this.setLoading(false);
         }
-    }
-
-    displayResults(data) {
+    }    displayResults(data) {
         // Display configuration output
         this.outputSection.innerHTML = `
-            <div class="config-output">${this.escapeHtml(data.output)}</div>
+            <div class="config-output">${this.escapeHtml(data.configuration)}</div>
         `;
         
         this.copyBtn.style.display = 'inline-block';
 
-        // Display analysis
-        if (data.analysis) {
-            this.displayAnalysis(data.analysis);
+        // Display analysis/entities
+        if (data.entities) {
+            this.displayAnalysis(data.entities);
         }
 
         this.showAlert('Configuration generated successfully!', 'success');
-    }
-
-    displayAnalysis(analysis) {
+    }    displayAnalysis(entities) {
         const analysisHtml = `
             <div class="analysis-grid">
                 <div class="analysis-item">
                     <h6><i class="fas fa-list-ol"></i> Lines</h6>
-                    <div class="analysis-value">${Array.isArray(analysis.lines) ? analysis.lines.join(', ') : analysis.lines}</div>
+                    <div class="analysis-value">${Array.isArray(entities.lines) && entities.lines.length > 0 ? entities.lines.join(', ') : 'Not specified'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-exchange-alt"></i> Forwarder Type</h6>
-                    <div class="analysis-value">${analysis.forwarder_type}</div>
+                    <div class="analysis-value">${entities.forwarder_type || 'N:1'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-tag"></i> User VLANs</h6>
-                    <div class="analysis-value">${Array.isArray(analysis.user_vlans) && analysis.user_vlans.length > 0 ? analysis.user_vlans.join(', ') : 'Auto-generated'}</div>
+                    <div class="analysis-value">${Array.isArray(entities.user_vlans) && entities.user_vlans.length > 0 ? entities.user_vlans.join(', ') : 'Auto-generated'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-network-wired"></i> Network VLANs</h6>
-                    <div class="analysis-value">${Array.isArray(analysis.network_vlans) && analysis.network_vlans.length > 0 ? analysis.network_vlans.join(', ') : 'Auto-generated'}</div>
+                    <div class="analysis-value">${Array.isArray(entities.network_vlans) && entities.network_vlans.length > 0 ? entities.network_vlans.join(', ') : 'Auto-generated'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-sitemap"></i> Multi-line</h6>
-                    <div class="analysis-value">${analysis.is_multi_line ? 'Yes' : 'No'}</div>
+                    <div class="analysis-value">${entities.is_multi_line ? 'Yes' : 'No'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-unlink"></i> Untagged</h6>
-                    <div class="analysis-value">${analysis.is_untagged ? 'Yes' : 'No'}</div>
+                    <div class="analysis-value">${entities.is_untagged ? 'Yes' : 'No'}</div>
                 </div>
                 <div class="analysis-item">
                     <h6><i class="fas fa-globe"></i> Protocols</h6>
-                    <div class="analysis-value">${Array.isArray(analysis.protocols) && analysis.protocols.length > 0 ? analysis.protocols.join(', ') : 'Standard Ethernet'}</div>
+                    <div class="analysis-value">${Array.isArray(entities.protocols) && entities.protocols.length > 0 ? entities.protocols.join(', ') : 'Standard Ethernet'}</div>
+                </div>
+                <div class="analysis-item">
+                    <h6><i class="fas fa-cogs"></i> Services</h6>
+                    <div class="analysis-value">${entities.is_multi_service ? `Multi-service (${entities.service_count || 'Auto'})` : 'Single service'}</div>
                 </div>
             </div>
         `;
@@ -113,12 +111,16 @@ class NetworkConfigApp {
         this.analysisSection.style.display = 'block';
     }    async loadExamples() {
         try {
-            const response = await fetch('/api/examples');
-            const data = await response.json();
-
-            if (data.success && data.examples) {
-                this.renderExamples(data.examples);
-            }
+            // Hardcoded examples since the server doesn't have an examples endpoint
+            const examples = [
+                "Configure DUT for a Service with 1:1 Forwarder and Ensure that bi-directional Traffic is fine.",
+                "1. Configure DUT with User Side VSI with VLAN 100 on Line1\n2. Configure DUT with Network Side VSI with VLAN 200 on Uplink1\n3. Send Upstream Traffic with VLAN100 and PBIT 5",
+                "Configure 2 Services per line2, 3 lines with N:1 forwarder. Send bidirectional traffic with VLAN 4000 and PBIT 0 to 7.",
+                "Configure DUT with User Side VSI with untagged on Line1 and Network Side VSI with VLAN 200 on Uplink1.",
+                "Test multi-service scenario: 3 services per line on Line1, Line2, Line3 with different VLANs and PBITs."
+            ];
+            
+            this.renderExamples(examples);
         } catch (error) {
             console.error('Error loading examples:', error);
             if (this.examplesList) {
