@@ -2,8 +2,6 @@
 
 A Flask web application that automatically generates network configuration and traffic test procedures from natural language descriptions.
 
-🌐 **Live Demo:** [https://harshitsharma-dev.github.io/testIT/](https://harshitsharma-dev.github.io/testIT/)
-
 ## 🚀 Features
 
 - **Intelligent Text Parsing**: Extracts network entities (VLANs, lines, forwarders, protocols) from natural language
@@ -24,8 +22,8 @@ A Flask web application that automatically generates network configuration and t
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/harshitsharma-dev/testIT.git
-   cd testIT
+   git clone https://github.com/yourusername/network-config-generator.git
+   cd network-config-generator
    ```
 
 2. **Create virtual environment**
@@ -59,8 +57,6 @@ network-config-generator/
 ├── requirements.txt      # Python dependencies
 ├── .env                 # Environment variables (optional)
 ├── .gitignore          # Git ignore rules
-├── .github/
-│   └── workflows/      # GitHub Actions for deployment
 ├── templates/
 │   └── index.html      # Main web interface
 └── static/
@@ -103,29 +99,26 @@ Forwarder-1 1:1
 
 ## 🚀 Deployment
 
-### GitHub Pages
-The project automatically deploys to GitHub Pages via GitHub Actions:
-- **Live Demo**: [https://harshitsharma-dev.github.io/testIT/](https://harshitsharma-dev.github.io/testIT/)
-- Deployment happens automatically on push to `main` branch
-- Static site showcases the project with examples
+### GitHub
+1. Create a new repository on GitHub
+2. Push your code:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/yourusername/network-config-generator.git
+   git push -u origin main
+   ```
 
-### Local Development
-For full functionality with live processing:
-```bash
-git clone https://github.com/harshitsharma-dev/testIT.git
-cd testIT
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
-
-### Cloud Deployment
-The Flask application can be deployed to:
-- **Heroku**: Use the included Procfile
-- **Railway**: Direct deployment from GitHub
-- **Render**: Container or web service deployment
-- **Docker**: Use the included Dockerfile
+### Heroku (Optional)
+1. Install Heroku CLI
+2. Login and create app:
+   ```bash
+   heroku login
+   heroku create your-app-name
+   git push heroku main
+   ```
 
 ## 🤝 Contributing
 
