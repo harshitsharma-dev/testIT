@@ -1,0 +1,245 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create static build
+        run: |
+          # Create a static directory structure for GitHub Pages
+          mkdir -p _site
+          mkdir -p _site/static/css
+          mkdir -p _site/static/js
+          
+          # Copy static files
+          cp -r static/* _site/static/
+          cp -r templates/* _site/
+          
+          # Create a simple index.html that works without Flask
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Network Configuration Generator</title>
+              <link rel="stylesheet" href="static/css/style.css">
+              <style>
+                  .api-note {
+                      background: #fff3cd;
+                      border: 1px solid #ffeaa7;
+                      border-radius: 5px;
+                      padding: 15px;
+                      margin: 20px 0;
+                      color: #856404;
+                  }
+                  .deploy-info {
+                      background: #d1ecf1;
+                      border: 1px solid #bee5eb;
+                      border-radius: 5px;
+                      padding: 15px;
+                      margin: 20px 0;
+                      color: #0c5460;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <header>
+                      <h1>🔧 Network Configuration Generator</h1>
+                      <p>Intelligent network test procedure parser with comprehensive VSI and traffic generation</p>
+                  </header>
+
+                  <div class="deploy-info">
+                      <h3>📢 GitHub Pages Deployment</h3>
+                      <p>This is the static version of the Network Configuration Generator. The full Flask application with live processing is available at:</p>
+                      <ul>
+                          <li><strong>Local Development:</strong> Clone the repository and run <code>python app.py</code></li>
+                          <li><strong>Repository:</strong> <a href="https://github.com/harshitsharma-dev/testIT" target="_blank">https://github.com/harshitsharma-dev/testIT</a></li>
+                      </ul>
+                  </div>
+
+                  <main>
+                      <section class="input-section">
+                          <h2>📝 Input Test Procedure</h2>
+                          <div class="form-group">
+                              <label for="procedure-input">Enter your network test procedure:</label>
+                              <textarea 
+                                  id="procedure-input" 
+                                  placeholder="Example: Configure DUT for a Service with 1:1 Forwarder and Ensure that bi-directional Traffic is fine for all 16 lines"
+                                  rows="8"
+                              ></textarea>
+                          </div>
+                          
+                          <div class="button-group">
+                              <button id="generate-btn" class="btn btn-primary" disabled>
+                                  🚀 Generate Configuration (Requires Local Setup)
+                              </button>
+                              <button id="copy-btn" class="btn btn-secondary" style="display: none;">
+                                  📋 Copy Output
+                              </button>
+                          </div>
+
+                          <div class="api-note">
+                              <h4>🔧 To Use Full Functionality:</h4>
+                              <ol>
+                                  <li>Clone the repository: <code>git clone https://github.com/harshitsharma-dev/testIT.git</code></li>
+                                  <li>Install dependencies: <code>pip install -r requirements.txt</code></li>
+                                  <li>Run the Flask app: <code>python app.py</code></li>
+                                  <li>Open <code>http://localhost:5000</code> in your browser</li>
+                              </ol>
+                          </div>
+                      </section>
+
+                      <aside class="examples-section">
+                          <h2>📚 Example Procedures</h2>
+                          <div class="examples-list">
+                              <div class="example-item">
+                                  <h4>1:1 Forwarder</h4>
+                                  <p>Configure DUT for a Service with 1:1 Forwarder and Ensure that bi-directional Traffic is fine.</p>
+                              </div>
+                              
+                              <div class="example-item">
+                                  <h4>N:1 All Lines</h4>
+                                  <p>Configure DUT for a Service with N:1 Forwarder and Ensure that bi-directional Traffic is fine for all Lines</p>
+                              </div>
+                              
+                              <div class="example-item">
+                                  <h4>Specific VLANs</h4>
+                                  <p>1. Configure DUT with User Side VSI with VLAN 100 on Line1<br>
+                                  2. Configure DUT with Network Side VSI with VLAN 200 on Uplink1<br>
+                                  3. Send Upstream Traffic with VLAN100 and PBIT 5</p>
+                              </div>
+                              
+                              <div class="example-item">
+                                  <h4>Mixed Forwarders</h4>
+                                  <p>Configure DUT for a service with 1:1 Forwarder for first 8 lines and N:1 Forwarder for remaining 8 lines</p>
+                              </div>
+                              
+                              <div class="example-item">
+                                  <h4>IPv6 Protocol</h4>
+                                  <p>1. Configure DUT with User Side VSI with VLAN Identifier 110 for line 10<br>
+                                  2. Validate bi-directional Ipv6 Traffic</p>
+                              </div>
+                          </div>
+                      </aside>
+
+                      <section class="output-section">
+                          <h2>⚙️ Generated Configuration</h2>
+                          <div class="analysis-section">
+                              <h3>🔍 Analysis</h3>
+                              <div class="analysis-grid">
+                                  <div class="analysis-item">
+                                      <span class="label">User VLANs:</span>
+                                      <span class="value">Will appear after processing</span>
+                                  </div>
+                                  <div class="analysis-item">
+                                      <span class="label">Network VLANs:</span>
+                                      <span class="value">Will appear after processing</span>
+                                  </div>
+                                  <div class="analysis-item">
+                                      <span class="label">Lines:</span>
+                                      <span class="value">Will appear after processing</span>
+                                  </div>
+                                  <div class="analysis-item">
+                                      <span class="label">Forwarder Type:</span>
+                                      <span class="value">Will appear after processing</span>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <div class="config-output">
+                              <pre id="config-result">Generated configuration will appear here when you run the local Flask application...</pre>
+                          </div>
+                      </section>
+                  </main>
+
+                  <footer>
+                      <p>🔗 <a href="https://github.com/harshitsharma-dev/testIT" target="_blank">View on GitHub</a> | 
+                         📖 <a href="https://github.com/harshitsharma-dev/testIT#readme" target="_blank">Documentation</a></p>
+                  </footer>
+              </div>
+
+              <script>
+                  // Static page functionality - limited without Flask backend
+                  document.addEventListener('DOMContentLoaded', function() {
+                      const generateBtn = document.getElementById('generate-btn');
+                      const procedureInput = document.getElementById('procedure-input');
+                      const configResult = document.getElementById('config-result');
+
+                      // Load example when clicked
+                      document.querySelectorAll('.example-item').forEach(item => {
+                          item.style.cursor = 'pointer';
+                          item.addEventListener('click', function() {
+                              const text = this.querySelector('p').textContent.replace(/<br>/g, '\n');
+                              procedureInput.value = text;
+                          });
+                      });
+
+                      generateBtn.addEventListener('click', function() {
+                          configResult.textContent = 'This is a static demo. To generate actual configurations, please run the Flask application locally.\n\nClone the repository and run:\n1. pip install -r requirements.txt\n2. python app.py\n3. Open http://localhost:5000';
+                      });
+
+                      // Copy functionality
+                      document.getElementById('copy-btn').addEventListener('click', function() {
+                          navigator.clipboard.writeText(configResult.textContent);
+                          this.textContent = '✅ Copied!';
+                          setTimeout(() => {
+                              this.textContent = '📋 Copy Output';
+                          }, 2000);
+                      });
+                  });
+              </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '_site'
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

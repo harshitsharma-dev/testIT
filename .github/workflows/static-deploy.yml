@@ -1,0 +1,186 @@
+name: Deploy Static Site to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Create static site
+        run: |
+          mkdir -p _site
+          
+          # Copy static assets
+          cp -r static _site/
+          
+          # Create main index.html
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Network Configuration Generator</title>
+              <link rel="stylesheet" href="static/css/style.css">
+              <style>
+                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+                  .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; text-align: center; }
+                  .hero h1 { font-size: 3em; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+                  .hero p { font-size: 1.2em; margin: 20px 0; opacity: 0.9; }
+                  .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+                  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; padding: 60px 0; }
+                  .feature { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+                  .feature h3 { color: #667eea; margin-top: 0; }
+                  .demo-section { background: white; margin: 40px 0; padding: 40px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+                  .code-block { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow-x: auto; margin: 20px 0; }
+                  .btn { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 10px; transition: background 0.3s; }
+                  .btn:hover { background: #5a67d8; }
+                  .github-link { background: #333; }
+                  .github-link:hover { background: #555; }
+                  footer { background: #2d3748; color: white; text-align: center; padding: 40px 20px; }
+              </style>
+          </head>
+          <body>
+              <div class="hero">
+                  <div class="container">
+                      <h1>🔧 Network Configuration Generator</h1>
+                      <p>Intelligent Flask application that generates network VSI and traffic configurations from natural language test procedures</p>
+                      <a href="https://github.com/harshitsharma-dev/testIT" class="btn github-link">View on GitHub</a>
+                      <a href="#demo" class="btn">See Demo</a>
+                  </div>
+              </div>
+
+              <div class="container">
+                  <div class="features">
+                      <div class="feature">
+                          <h3>🧠 Intelligent Parsing</h3>
+                          <p>Advanced entity extraction using regex patterns and context awareness to understand network test procedures written in natural language.</p>
+                      </div>
+                      
+                      <div class="feature">
+                          <h3>🔄 Multi-Forwarder Support</h3>
+                          <p>Handles 1:1, N:1, and mixed forwarder configurations with automatic VLAN mapping and traffic generation.</p>
+                      </div>
+                      
+                      <div class="feature">
+                          <h3>🌐 Protocol Detection</h3>
+                          <p>Automatically detects and configures IPv6, PPPoE, and standard Ethernet protocols in test procedures.</p>
+                      </div>
+                      
+                      <div class="feature">
+                          <h3>⚡ Real-time Generation</h3>
+                          <p>Flask-powered web interface with REST API endpoints for immediate configuration generation and analysis.</p>
+                      </div>
+                      
+                      <div class="feature">
+                          <h3>📊 Comprehensive Analysis</h3>
+                          <p>Detailed entity analysis showing extracted VLANs, lines, forwarder types, and protocol information.</p>
+                      </div>
+                      
+                      <div class="feature">
+                          <h3>🎯 Production Ready</h3>
+                          <p>Complete Flask application with error handling, validation, and professional web interface.</p>
+                      </div>
+                  </div>
+
+                  <div class="demo-section" id="demo">
+                      <h2>📋 Quick Start</h2>
+                      <p>Get the application running locally in just a few commands:</p>
+                      
+                      <div class="code-block">git clone https://github.com/harshitsharma-dev/testIT.git
+cd testIT
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py</div>
+
+                      <p>Then open <code>http://localhost:5000</code> in your browser!</p>
+                  </div>
+
+                  <div class="demo-section">
+                      <h2>💡 Example Usage</h2>
+                      <p><strong>Input:</strong></p>
+                      <div class="code-block">Configure DUT for a Service with 1:1 Forwarder and Ensure that bi-directional Traffic is fine for all 16 lines</div>
+                      
+                      <p><strong>Generated Output:</strong></p>
+                      <div class="code-block">Entity1 = DUT
+Entity1 Keywords =
+UserVSI-1 = VLAN=101, PBIT=0
+UserVSI-1 Parent = Line1
+UserVSI-2 = VLAN=102, PBIT=0
+UserVSI-2 Parent = Line2
+...
+NetworkVSI-1 = VLAN=101, PBIT=0
+NetworkVSI-1 Parent = Uplink1
+NetworkVSI-2 = VLAN=1102, PBIT=0
+NetworkVSI-2 Parent = Uplink1
+...
+Forwarder-1 1:1
+Forwarder-2 1:1</div>
+                  </div>
+
+                  <div class="demo-section">
+                      <h2>🚀 Features</h2>
+                      <ul>
+                          <li><strong>Entity Extraction:</strong> Automatically identifies VLANs, lines, forwarder types, and protocols</li>
+                          <li><strong>VSI Generation:</strong> Creates User and Network VSI configurations</li>
+                          <li><strong>Traffic Configuration:</strong> Generates upstream and downstream traffic equipment settings</li>
+                          <li><strong>Multiple Scenarios:</strong> Supports single line, multi-line, and all-lines configurations</li>
+                          <li><strong>Protocol Support:</strong> IPv6 and PPPoE protocol detection and configuration</li>
+                          <li><strong>Web Interface:</strong> Clean, responsive UI with example procedures</li>
+                          <li><strong>REST API:</strong> JSON endpoints for programmatic access</li>
+                      </ul>
+                  </div>
+
+                  <div class="demo-section">
+                      <h2>🛠️ Technology Stack</h2>
+                      <ul>
+                          <li><strong>Backend:</strong> Flask 2.3.3, Python 3.9+</li>
+                          <li><strong>Data Processing:</strong> pandas, numpy, regex</li>
+                          <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (ES6)</li>
+                          <li><strong>Deployment:</strong> GitHub Actions, Docker-ready</li>
+                      </ul>
+                  </div>
+              </div>
+
+              <footer>
+                  <div class="container">
+                      <p>&copy; 2025 Network Configuration Generator | Built with ❤️ using Flask</p>
+                      <p>
+                          <a href="https://github.com/harshitsharma-dev/testIT" style="color: #81e6d9;">GitHub Repository</a> | 
+                          <a href="https://github.com/harshitsharma-dev/testIT#readme" style="color: #81e6d9;">Documentation</a>
+                      </p>
+                  </div>
+              </footer>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
