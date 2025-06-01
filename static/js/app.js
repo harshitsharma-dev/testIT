@@ -1,9 +1,24 @@
 // Network Configuration Generator JavaScript
 class NetworkConfigApp {
     constructor() {
+        this.isStaticDeployment = window.location.hostname.includes('github.io');
         this.initializeElements();
         this.loadExamples();
         this.bindEvents();
+        
+        // Handle static deployment
+        if (this.isStaticDeployment) {
+            this.setupStaticMode();
+        }
+    }
+    
+    setupStaticMode() {
+        // Disable generate button and show message
+        const generateBtn = document.getElementById('generateBtn');
+        if (generateBtn) {
+            generateBtn.disabled = true;
+            generateBtn.textContent = '🚀 Generate Configuration (Requires Local Setup)';
+        }
     }
 
     initializeElements() {
@@ -22,14 +37,18 @@ class NetworkConfigApp {
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
         this.clearBtn.addEventListener('click', () => this.clearAll());
         this.copyBtn.addEventListener('click', () => this.copyOutput());
-    }
-
-    async handleSubmit(e) {
+    }    async handleSubmit(e) {
         e.preventDefault();
         
         const inputText = this.inputText.value.trim();
         if (!inputText) {
             this.showAlert('Please enter a test procedure.', 'warning');
+            return;
+        }
+
+        // Handle static deployment
+        if (this.isStaticDeployment) {
+            this.showStaticMessage();
             return;
         }
 
@@ -208,8 +227,50 @@ class NetworkConfigApp {
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.remove();
-            }
-        }, 5000);
+            }        }, 5000);
+    }
+
+    showStaticMessage() {
+        // Show static deployment message
+        this.outputSection.style.display = 'block';
+        
+        const outputDiv = document.getElementById('output');
+        if (outputDiv) {
+            outputDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h4>🌐 GitHub Pages Static Demo</h4>
+                    <p>This is a static demonstration of the Network Configuration Generator. To use the full functionality with live processing:</p>
+                    <ol>
+                        <li>Clone the repository: <code>git clone https://github.com/harshitsharma-dev/testIT.git</code></li>
+                        <li>Install dependencies: <code>pip install -r requirements.txt</code></li>
+                        <li>Run the Flask app: <code>python app.py</code></li>
+                        <li>Open <code>http://localhost:5000</code> in your browser</li>
+                    </ol>
+                    <p><strong>Repository:</strong> <a href="https://github.com/harshitsharma-dev/testIT" target="_blank">https://github.com/harshitsharma-dev/testIT</a></p>
+                </div>
+                <div class="config-output">
+                    <h3>Sample Output Preview:</h3>
+                    <pre class="code-block">
+=== Network Configuration Generator ===
+Input: "${this.escapeForJs(this.inputText.value)}"
+
+[Analysis would show here]
+- User VLANs: Auto-detected
+- Network VLANs: Auto-detected  
+- Lines: Auto-detected
+- Forwarder Type: Auto-detected
+
+[VSI Configuration would be generated here]
+[Traffic Configuration would be generated here]
+
+To see actual generated configurations, run locally!
+                    </pre>
+                </div>
+            `;
+        }
+        
+        // Show copy button
+        this.copyBtn.style.display = 'inline-block';
     }
 
     escapeHtml(text) {
