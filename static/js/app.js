@@ -1,27 +1,10 @@
 // Network Configuration Generator JavaScript
 class NetworkConfigApp {
     constructor() {
-        this.isStaticDeployment = window.location.hostname.includes('github.io');
         this.initializeElements();
         this.loadExamples();
         this.bindEvents();
-        
-        // Handle static deployment
-        if (this.isStaticDeployment) {
-            this.setupStaticMode();
-        }
-    }
-    
-    setupStaticMode() {
-        // Disable generate button and show message
-        const generateBtn = document.getElementById('generateBtn');
-        if (generateBtn) {
-            generateBtn.disabled = true;
-            generateBtn.textContent = '🚀 Generate Configuration (Requires Local Setup)';
-        }
-    }
-
-    initializeElements() {
+    }    initializeElements() {
         this.form = document.getElementById('configForm');
         this.inputText = document.getElementById('inputText');
         this.generateBtn = document.getElementById('generateBtn');
@@ -31,24 +14,22 @@ class NetworkConfigApp {
         this.analysisSection = document.getElementById('analysisSection');
         this.analysisContent = document.getElementById('analysisContent');
         this.examplesList = document.getElementById('examplesList');
-    }
-
-    bindEvents() {
-        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-        this.clearBtn.addEventListener('click', () => this.clearAll());
-        this.copyBtn.addEventListener('click', () => this.copyOutput());
+    }bindEvents() {
+        if (this.form) {
+            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
+        if (this.clearBtn) {
+            this.clearBtn.addEventListener('click', () => this.clearAll());
+        }
+        if (this.copyBtn) {
+            this.copyBtn.addEventListener('click', () => this.copyOutput());
+        }
     }    async handleSubmit(e) {
         e.preventDefault();
         
         const inputText = this.inputText.value.trim();
         if (!inputText) {
             this.showAlert('Please enter a test procedure.', 'warning');
-            return;
-        }
-
-        // Handle static deployment
-        if (this.isStaticDeployment) {
-            this.showStaticMessage();
             return;
         }
 
@@ -130,9 +111,7 @@ class NetworkConfigApp {
         
         this.analysisContent.innerHTML = analysisHtml;
         this.analysisSection.style.display = 'block';
-    }
-
-    async loadExamples() {
+    }    async loadExamples() {
         try {
             const response = await fetch('/api/examples');
             const data = await response.json();
@@ -142,11 +121,13 @@ class NetworkConfigApp {
             }
         } catch (error) {
             console.error('Error loading examples:', error);
-            this.examplesList.innerHTML = '<p class="text-muted">Error loading examples</p>';
+            if (this.examplesList) {
+                this.examplesList.innerHTML = '<p class="text-muted">Error loading examples</p>';
+            }
         }
-    }
-
-    renderExamples(examples) {
+    }renderExamples(examples) {
+        if (!this.examplesList) return;
+        
         this.examplesList.innerHTML = examples.map(example => `
             <div class="example-item" onclick="app.useExample('${this.escapeForJs(example)}')">
                 ${example.length > 80 ? example.substring(0, 80) + '...' : example}
@@ -155,36 +136,51 @@ class NetworkConfigApp {
     }
 
     useExample(example) {
-        this.inputText.value = example;
-        this.inputText.focus();
-    }
-
-    clearAll() {
-        this.inputText.value = '';
-        this.outputSection.innerHTML = `
-            <div class="text-muted text-center py-5">
-                <i class="fas fa-arrow-left fa-2x mb-3"></i>
-                <p>Enter a test procedure and click "Generate Configuration" to see the results here.</p>
-            </div>
-        `;
-        this.copyBtn.style.display = 'none';
-        this.analysisSection.style.display = 'none';
-        this.inputText.focus();
+        if (this.inputText) {
+            this.inputText.value = example;
+            this.inputText.focus();
+        }
+    }clearAll() {
+        if (this.inputText) {
+            this.inputText.value = '';
+            this.inputText.focus();
+        }
+        if (this.outputSection) {
+            this.outputSection.innerHTML = `
+                <div class="text-muted text-center py-5">
+                    <i class="fas fa-arrow-left fa-2x mb-3"></i>
+                    <p>Enter a test procedure and click "Generate Configuration" to see the results here.</p>
+                </div>
+            `;
+        }
+        if (this.copyBtn) {
+            this.copyBtn.style.display = 'none';
+        }
+        if (this.analysisSection) {
+            this.analysisSection.style.display = 'none';
+        }
     }
 
     copyOutput() {
-        const configText = this.outputSection.querySelector('.config-output').textContent;
+        if (!this.outputSection) return;
+        
+        const configOutput = this.outputSection.querySelector('.config-output');
+        if (!configOutput) return;
+        
+        const configText = configOutput.textContent;
         navigator.clipboard.writeText(configText).then(() => {
-            const originalText = this.copyBtn.innerHTML;
-            this.copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-            this.copyBtn.classList.remove('btn-outline-primary');
-            this.copyBtn.classList.add('btn-success');
-            
-            setTimeout(() => {
-                this.copyBtn.innerHTML = originalText;
-                this.copyBtn.classList.remove('btn-success');
-                this.copyBtn.classList.add('btn-outline-primary');
-            }, 2000);
+            if (this.copyBtn) {
+                const originalText = this.copyBtn.innerHTML;
+                this.copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                this.copyBtn.classList.remove('btn-outline-primary');
+                this.copyBtn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    this.copyBtn.innerHTML = originalText;
+                    this.copyBtn.classList.remove('btn-success');
+                    this.copyBtn.classList.add('btn-outline-primary');
+                }, 2000);
+            }
         }).catch(err => {
             console.error('Failed to copy:', err);
             this.showAlert('Failed to copy to clipboard', 'warning');
@@ -228,52 +224,7 @@ class NetworkConfigApp {
             if (alert.parentNode) {
                 alert.remove();
             }        }, 5000);
-    }
-
-    showStaticMessage() {
-        // Show static deployment message
-        this.outputSection.style.display = 'block';
-        
-        const outputDiv = document.getElementById('output');
-        if (outputDiv) {
-            outputDiv.innerHTML = `
-                <div class="alert alert-info">
-                    <h4>🌐 GitHub Pages Static Demo</h4>
-                    <p>This is a static demonstration of the Network Configuration Generator. To use the full functionality with live processing:</p>
-                    <ol>
-                        <li>Clone the repository: <code>git clone https://github.com/harshitsharma-dev/testIT.git</code></li>
-                        <li>Install dependencies: <code>pip install -r requirements.txt</code></li>
-                        <li>Run the Flask app: <code>python app.py</code></li>
-                        <li>Open <code>http://localhost:5000</code> in your browser</li>
-                    </ol>
-                    <p><strong>Repository:</strong> <a href="https://github.com/harshitsharma-dev/testIT" target="_blank">https://github.com/harshitsharma-dev/testIT</a></p>
-                </div>
-                <div class="config-output">
-                    <h3>Sample Output Preview:</h3>
-                    <pre class="code-block">
-=== Network Configuration Generator ===
-Input: "${this.escapeForJs(this.inputText.value)}"
-
-[Analysis would show here]
-- User VLANs: Auto-detected
-- Network VLANs: Auto-detected  
-- Lines: Auto-detected
-- Forwarder Type: Auto-detected
-
-[VSI Configuration would be generated here]
-[Traffic Configuration would be generated here]
-
-To see actual generated configurations, run locally!
-                    </pre>
-                </div>
-            `;
-        }
-        
-        // Show copy button
-        this.copyBtn.style.display = 'inline-block';
-    }
-
-    escapeHtml(text) {
+    }    escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;

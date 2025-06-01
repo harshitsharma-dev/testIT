@@ -2,7 +2,7 @@
 
 A Flask web application that automatically generates network configuration and traffic test procedures from natural language descriptions.
 
-🌐 **Live Demo:** [https://harshitsharma-dev.github.io/testIT/](https://harshitsharma-dev.github.io/testIT/)
+🚀 **Deploy to Vercel:** [One-click deployment with live backend](VERCEL_DEPLOYMENT.md)
 
 ## 🚀 Features
 
@@ -21,6 +21,8 @@ A Flask web application that automatically generates network configuration and t
 - numpy 1.24.3
 
 ## 🛠️ Quick Start
+
+### Local Development
 
 1. **Clone the repository**
    ```bash
@@ -48,6 +50,17 @@ A Flask web application that automatically generates network configuration and t
    ```
    http://localhost:5000
    ```
+
+### ☁️ Deploy to Vercel (Recommended)
+
+For a live deployment with full backend functionality:
+
+1. **Fork this repository** to your GitHub account
+2. **Sign up at [Vercel](https://vercel.com)** (free)
+3. **Import your repository** in Vercel dashboard
+4. **Deploy** - Your app will be live in minutes!
+
+📖 **Detailed Guide:** [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)
 
 ## 📁 Project Structure
 
@@ -103,29 +116,20 @@ Forwarder-1 1:1
 
 ## 🚀 Deployment
 
-### GitHub Pages
-The project automatically deploys to GitHub Pages via GitHub Actions:
-- **Live Demo**: [https://harshitsharma-dev.github.io/testIT/](https://harshitsharma-dev.github.io/testIT/)
-- Deployment happens automatically on push to `main` branch
-- Static site showcases the project with examples
+### Vercel (Recommended)
+Deploy your Flask app to Vercel for a live backend with serverless functions:
 
-### Local Development
-For full functionality with live processing:
-```bash
-git clone https://github.com/harshitsharma-dev/testIT.git
-cd testIT
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
+1. **Fork this repository** to your GitHub account
+2. **Sign up at [Vercel](https://vercel.com)** (free account)
+3. **Import your repository** in Vercel dashboard
+4. **Click Deploy** - Your app will be live in minutes!
 
-### Cloud Deployment
-The Flask application can be deployed to:
-- **Heroku**: Use the included Procfile
-- **Railway**: Direct deployment from GitHub
-- **Render**: Container or web service deployment
-- **Docker**: Use the included Dockerfile
+✅ **Full functionality**: Working Flask backend, API endpoints, and database processing  
+✅ **Automatic HTTPS**: Secure connection included  
+✅ **Custom domains**: Add your own domain if needed  
+✅ **Auto-deployment**: Updates on every git push  
+
+📖 **Detailed Guide**: [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)
 
 ## 🤝 Contributing
 

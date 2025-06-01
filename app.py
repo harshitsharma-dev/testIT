@@ -95,8 +95,13 @@ def health_check():
     })
 
 if __name__ == '__main__':
+    # Handle cloud deployment ports
+    import os
+    port = int(os.environ.get('PORT', app.config['PORT']))
+    host = os.environ.get('HOST', app.config['HOST'])
+    
     app.run(
-        host=app.config['HOST'],
-        port=app.config['PORT'],
+        host=host,
+        port=port,
         debug=app.config['DEBUG']
     )
