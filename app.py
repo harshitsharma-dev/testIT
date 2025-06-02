@@ -32,7 +32,7 @@ except ImportError:
     SPACY_AVAILABLE = False
     print("⚠️ spaCy not available. Using regex fallback.")
 
-# Enhanced NLP Entity Extraction Engine
+# Enhanced NLP Entity Extraction Engine with Deep English Understanding
 class AdvancedNLPEntityExtractor:
     def __init__(self):
         self.spacy_available = SPACY_AVAILABLE
@@ -41,7 +41,7 @@ class AdvancedNLPEntityExtractor:
             self.matcher = Matcher(self.nlp.vocab)
             self._setup_spacy_patterns()
 
-        # Enhanced VLAN patterns
+        # Enhanced VLAN patterns with context awareness
         self.vlan_patterns = [
             r'vlan\s+id\s+(\d+)',           # VLAN ID 101
             r'vlan-tag\s+(\d+)',            # VLAN-TAG 101
@@ -50,6 +50,53 @@ class AdvancedNLPEntityExtractor:
             r'vlan\s+(\d+)',                # VLAN 100
             r'identifier\s+(\d+)',          # Identifier 110
             r'tag\s+(\d+)',                 # TAG 110
+        ]
+
+        # CRITICAL: Enhanced context-aware VLAN patterns
+        self.contextual_vlan_patterns = [
+            # User side patterns
+            {
+                'pattern': r'user\s+side\s+vsi\s+with\s+vlan\s+(\d+)',
+                'context': 'user',
+                'groups': ['vlan']
+            },
+            {
+                'pattern': r'configure\s+dut\s+with\s+user\s+side\s+vsi\s+with\s+vlan\s+(\d+)',
+                'context': 'user',
+                'groups': ['vlan']
+            },
+            {
+                'pattern': r'user\s+side.*?vlan\s+(\d+)',
+                'context': 'user',
+                'groups': ['vlan']
+            },
+            # Network side patterns
+            {
+                'pattern': r'network\s+side\s+vsi\s+with\s+vlan\s+(\d+)',
+                'context': 'network',
+                'groups': ['vlan']
+            },
+            {
+                'pattern': r'configure\s+dut\s+with\s+network\s+side\s+vsi\s+with\s+vlan\s+(\d+)',
+                'context': 'network',
+                'groups': ['vlan']
+            },
+            {
+                'pattern': r'network\s+side.*?vlan\s+(\d+)',
+                'context': 'network',
+                'groups': ['vlan']
+            },
+            # Line and uplink patterns
+            {
+                'pattern': r'vlan\s+(\d+)\s+on\s+line\d+',
+                'context': 'user',
+                'groups': ['vlan']
+            },
+            {
+                'pattern': r'vlan\s+(\d+)\s+on\s+uplink\d+',
+                'context': 'network',
+                'groups': ['vlan']
+            },
         ]
 
         # Enhanced multiple line patterns
@@ -266,7 +313,9 @@ class AdvancedNLPEntityExtractor:
             entities['user_pbits'] = [0]
 
         if not entities['network_pbits'] and not entities['all_pbit_range']:
-            entities['network_pbits'] = [0]        # Set flags
+            entities['network_pbits'] = [0]
+
+        # Set flags
         entities['is_multi_line'] = len(entities['lines']) > 1
         entities['is_all_lines'] = len(entities['lines']) == 16
 
@@ -274,7 +323,7 @@ class AdvancedNLPEntityExtractor:
             entities['mixed_forwarders'] = entities['discretization_config']
 
     def _extract_with_comprehensive_regex(self, text: str, entities: Dict):
-        """Enhanced comprehensive regex extraction with CASE INSENSITIVE matching"""
+        """CRITICAL FIX: Enhanced comprehensive regex extraction with deep English understanding"""
         text_lower = text.lower()
 
         # CRITICAL FIX: Check for VLAN translation FIRST (before untagged detection)
@@ -291,21 +340,25 @@ class AdvancedNLPEntityExtractor:
         # Enhanced multiple line detection
         self._extract_multiple_lines(text_lower, entities)
 
-        # Extract VLANs
-        all_vlans = []
-        for pattern in self.vlan_patterns:
-            matches = re.findall(pattern, text_lower, re.IGNORECASE)
-            all_vlans.extend([int(v) for v in matches if v.isdigit()])
+        # CRITICAL FIX: Use contextual VLAN extraction FIRST
+        contextual_vlans_found = self._extract_contextual_vlans(text_lower, entities)
+        
+        if not contextual_vlans_found:
+            # Fall back to general VLAN extraction if no contextual VLANs found
+            all_vlans = []
+            for pattern in self.vlan_patterns:
+                matches = re.findall(pattern, text_lower, re.IGNORECASE)
+                all_vlans.extend([int(v) for v in matches if v.isdigit()])
 
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_vlans = []
-        for vlan in all_vlans:
-            if vlan not in seen:
-                unique_vlans.append(vlan)
-                seen.add(vlan)
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_vlans = []
+            for vlan in all_vlans:
+                if vlan not in seen:
+                    unique_vlans.append(vlan)
+                    seen.add(vlan)
 
-        self._categorize_vlans_by_context(text, unique_vlans, entities)
+            self._categorize_vlans_by_context_fallback(text, unique_vlans, entities)
 
         # Enhanced PBIT detection
         self._extract_enhanced_pbits(text_lower, entities)
@@ -317,6 +370,55 @@ class AdvancedNLPEntityExtractor:
         # CRITICAL FIX: Only detect untagged if no VLAN translation context AND case insensitive
         if entities['has_vlan_translation'] is None:
             self._detect_untagged_regex(text, entities)
+
+    def _extract_contextual_vlans(self, text: str, entities: Dict) -> bool:
+        """CRITICAL FIX: Extract VLANs with their specific context (user/network side)"""
+        contextual_vlans_found = False
+        
+        print(f"🔍 Analyzing text for contextual VLANs: {text}")
+        
+        for pattern_info in self.contextual_vlan_patterns:
+            pattern = pattern_info['pattern']
+            context = pattern_info['context']
+            groups = pattern_info['groups']
+            
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
+                print(f"✅ Found {context} VLAN pattern: {pattern} -> {matches}")
+                contextual_vlans_found = True
+                
+                for match in matches:
+                    if isinstance(match, str):
+                        match = (match,)
+                    
+                    # Parse based on group configuration
+                    parsed_data = {}
+                    for i, group_name in enumerate(groups):
+                        if i < len(match):
+                            parsed_data[group_name] = match[i]
+                    
+                    # Extract VLAN
+                    if 'vlan' in parsed_data:
+                        try:
+                            vlan_id = int(parsed_data['vlan'])
+                            if context == 'user':
+                                if vlan_id not in entities['user_vlans']:
+                                    entities['user_vlans'].append(vlan_id)
+                                    print(f"✅ Added user VLAN: {vlan_id}")
+                            elif context == 'network':
+                                if vlan_id not in entities['network_vlans']:
+                                    entities['network_vlans'].append(vlan_id)
+                                    print(f"✅ Added network VLAN: {vlan_id}")
+                        except ValueError:
+                            continue
+        
+        # Sort the VLAN lists
+        entities['user_vlans'] = sorted(entities['user_vlans'])
+        entities['network_vlans'] = sorted(entities['network_vlans'])
+        
+        print(f"🔍 Final contextual VLANs - User: {entities['user_vlans']}, Network: {entities['network_vlans']}")
+        
+        return contextual_vlans_found
 
     def _extract_service_patterns(self, text: str, entities: Dict) -> bool:
         """Extract service patterns with proper group handling"""
@@ -426,8 +528,8 @@ class AdvancedNLPEntityExtractor:
         entities['lines'] = sorted(list(lines_found))
         entities['is_multi_line'] = len(lines_found) > 1
 
-    def _categorize_vlans_by_context(self, text: str, vlans: List[int], entities: Dict):
-        """Enhanced VLAN categorization"""
+    def _categorize_vlans_by_context_fallback(self, text: str, vlans: List[int], entities: Dict):
+        """Fallback VLAN categorization when contextual extraction fails"""
         if not vlans:
             return
 
@@ -453,13 +555,15 @@ class AdvancedNLPEntityExtractor:
                         break
 
             if not assigned:
-                if len(user_vlans) <= len(network_vlans):
-                    user_vlans.append(vlan)
-                else:
-                    network_vlans.append(vlan)
+                # If only one VLAN is specified, use it for both user and network
+                user_vlans.append(vlan)
+                network_vlans.append(vlan)
 
-        entities['user_vlans'] = sorted(list(set(user_vlans)))
-        entities['network_vlans'] = sorted(list(set(network_vlans)))
+        # Only update if contextual extraction didn't find anything
+        if not entities['user_vlans']:
+            entities['user_vlans'] = sorted(list(set(user_vlans)))
+        if not entities['network_vlans']:
+            entities['network_vlans'] = sorted(list(set(network_vlans)))
 
     def _extract_enhanced_pbits(self, text: str, entities: Dict):
         """Enhanced PBIT extraction with range support"""
@@ -560,7 +664,7 @@ class AdvancedNLPEntityExtractor:
                 entities['is_untagged'] = True
                 return
 
-print("📚 Flask application with NLP entity extraction initialized")
+print("📚 Flask application with enhanced NLP entity extraction initialized")
 
 @app.route('/')
 def index():
@@ -786,9 +890,16 @@ class IntelligentConfigGenerator:
         return "0"
 
     def _get_network_vlan(self, entities: Dict, line_num: int, forwarder_type: str) -> int:
-        """Get network VLAN with correct logic"""
+        """CRITICAL FIX: Get network VLAN - prioritize explicitly extracted network VLANs"""
+        # CRITICAL FIX: Always use explicitly extracted network VLANs first
         if entities['network_vlans']:
+            print(f"🔧 Using explicitly extracted network VLAN: {entities['network_vlans'][0]}")
             return entities['network_vlans'][0]
+
+        # If user VLANs are set and forwarder is 1:1, use same VLAN for transparency
+        if entities['user_vlans'] and forwarder_type == '1:1':
+            print(f"🔧 Using user VLAN for 1:1 transparency: {entities['user_vlans'][0]}")
+            return entities['user_vlans'][0]
 
         if entities['is_untagged']:
             return 101
@@ -802,9 +913,16 @@ class IntelligentConfigGenerator:
             return 1000
 
     def _get_network_vlan_for_group(self, entities: Dict, group_lines: List[int], forwarder_type: str) -> int:
-        """Get network VLAN for group of lines"""
+        """CRITICAL FIX: Get network VLAN for group of lines"""
+        # CRITICAL FIX: Always use explicitly extracted network VLANs first
         if entities['network_vlans']:
+            print(f"🔧 Using explicitly extracted network VLAN for group: {entities['network_vlans'][0]}")
             return entities['network_vlans'][0]
+
+        # If user VLANs are set and forwarder is 1:1, use same VLAN for transparency
+        if entities['user_vlans'] and forwarder_type == '1:1':
+            print(f"🔧 Using user VLAN for 1:1 group transparency: {entities['user_vlans'][0]}")
+            return entities['user_vlans'][0]
 
         return 1000
 
@@ -826,12 +944,15 @@ class IntelligentConfigGenerator:
         return "0"
 
     def _generate_traffic_configuration(self, entities: Dict, vsi_config: str) -> str:
-        """Generate traffic configuration"""
+        """CRITICAL FIX: Generate COMPLETE traffic configuration with all required sections"""
         lines = []
         target_lines = entities['lines']
         is_multi_line = len(target_lines) > 1
 
-        # Upstream traffic
+        # Parse VSI config to get actual VLANs used
+        vsi_mappings = self._parse_vsi_configuration(vsi_config)
+
+        # UPSTREAM TRAFFIC SECTION
         lines.extend([
             "Test Eqpt - Upstream",
             "Entity2 = User Side Traffic Eqpt",
@@ -839,6 +960,7 @@ class IntelligentConfigGenerator:
             "NumPackets To Generate = 100"
         ])
 
+        # Generate upstream user packets
         for i, line_num in enumerate(target_lines):
             user_vlan = self._get_user_vlan(entities, i, line_num)
             user_pbit = self._get_user_pbit(entities, i)
@@ -857,14 +979,44 @@ class IntelligentConfigGenerator:
             else:
                 lines.append(f"VLAN = {user_vlan}, PBIT = {user_pbit}")
 
-        # Network side reception
+            # Add protocol headers
+            for protocol in entities['protocols']:
+                if protocol == 'IPv6':
+                    lines.append("L3 Header = Ipv6")
+                elif protocol == 'PPPoE':
+                    lines.append("Next Header = PPPoE")
+
+        # NETWORK SIDE RECEPTION (UPSTREAM)
         lines.extend([
             "Entity3 = Network Side Traffic Eqpt",
             "Entity3 Keywords=",
             "NumPackets To Recieve = 100"
         ])
 
-        # Downstream traffic (similar structure)
+        # CRITICAL FIX: Generate network side reception packets
+        for i, line_num in enumerate(target_lines):
+            network_vlan = self._get_network_vlan(entities, line_num, entities['forwarder_type'])
+            network_pbit = self._get_network_pbit(entities, i)
+
+            if is_multi_line:
+                lines.append(f"Packet Line{line_num} L2 Header")
+                lines.append(f"Src MAC = 99:02:03:04:{line_num:02d}:11")
+                lines.append(f"Dst MAC = 98:0A:0B:0C:{line_num:02d}:0C")
+            else:
+                lines.append("Packet L2 Header")
+                lines.append("Src MAC = 99:02:03:04:05:06")
+                lines.append("Dst MAC = 98:0A:0B:0C:0D:0E")
+
+            lines.append(f"VLAN = {network_vlan}, PBIT = {network_pbit}")
+
+            # Add protocol headers
+            for protocol in entities['protocols']:
+                if protocol == 'IPv6':
+                    lines.append("L3 Header = Ipv6")
+                elif protocol == 'PPPoE':
+                    lines.append("Next Header = PPPoE")
+
+        # DOWNSTREAM TRAFFIC SECTION
         lines.extend([
             "Test Eqpt - Downstream",
             "Entity3 = Network Side Traffic Eqpt",
@@ -872,22 +1024,110 @@ class IntelligentConfigGenerator:
             "NumPackets To Generate = 100"
         ])
 
-        # User side reception
+        # CRITICAL FIX: Generate downstream network packets
+        for i, line_num in enumerate(target_lines):
+            network_vlan = self._get_network_vlan(entities, line_num, entities['forwarder_type'])
+            network_pbit = self._get_network_pbit(entities, i)
+
+            if is_multi_line:
+                lines.append(f"Packet Line{line_num} L2 Header")
+                lines.append(f"Src MAC = 98:0A:0B:0C:{line_num:02d}:0C")
+                lines.append(f"Dst MAC = 99:02:03:04:{line_num:02d}:11")
+            else:
+                lines.append("Packet L2 Header")
+                lines.append("Src MAC = 98:0A:0B:0C:0D:0E")
+                lines.append("Dst MAC = 99:02:03:04:05:06")
+
+            lines.append(f"VLAN = {network_vlan}, PBIT = {network_pbit}")
+
+            # Add protocol headers
+            for protocol in entities['protocols']:
+                if protocol == 'IPv6':
+                    lines.append("L3 Header = Ipv6")
+                elif protocol == 'PPPoE':
+                    lines.append("Next Header = PPPoE")
+
+        # USER SIDE RECEPTION (DOWNSTREAM)
         lines.extend([
             "Entity2 = User Side Traffic Eqpt",
             "Entity2 Keywords=",
             "NumPackets To Recieve = 100"
         ])
 
+        # CRITICAL FIX: Generate user side reception packets
+        for i, line_num in enumerate(target_lines):
+            user_vlan = self._get_user_vlan(entities, i, line_num)
+            user_pbit = self._get_user_pbit(entities, i)
+
+            if is_multi_line:
+                lines.append(f"Packet Line{line_num} L2 Header")
+                lines.append(f"Src MAC = 98:0A:0B:0C:{line_num:02d}:0C")
+                lines.append(f"Dst MAC = 99:02:03:04:{line_num:02d}:11")
+            else:
+                lines.append("Packet L2 Header")
+                lines.append("Src MAC = 98:0A:0B:0C:0D:0E")
+                lines.append("Dst MAC = 99:02:03:04:05:06")
+
+            if entities['is_untagged']:
+                lines.append("VLAN=No, PBIT=No")
+            else:
+                lines.append(f"VLAN = {user_vlan}, PBIT = {user_pbit}")
+
+            # Add protocol headers
+            for protocol in entities['protocols']:
+                if protocol == 'IPv6':
+                    lines.append("L3 Header = Ipv6")
+                elif protocol == 'PPPoE':
+                    lines.append("Next Header = PPPoE")
+
         return "\n".join(lines)
 
+    def _parse_vsi_configuration(self, vsi_config: str) -> Dict:
+        """Parse VSI configuration to extract VLAN mappings"""
+        mappings = {
+            'user_vlans': {},
+            'network_vlans': {},
+            'line_to_user_vsi': {},
+        }
+        
+        lines = vsi_config.split('\n')
+        for line in lines:
+            line = line.strip()
+            
+            # Parse UserVSI
+            if line.startswith('UserVSI-'):
+                match = re.search(r'UserVSI-(\d+)\s*=\s*VLAN=([^,]+),\s*PBIT=(\w+)', line)
+                if match:
+                    vsi_num = int(match.group(1))
+                    vlan = match.group(2)
+                    pbit = match.group(3)
+                    mappings['user_vlans'][vsi_num] = {'vlan': vlan, 'pbit': pbit}
+            
+            elif line.startswith('UserVSI-') and 'Parent' in line:
+                match = re.search(r'UserVSI-(\d+)\s*Parent\s*=\s*Line(\d+)', line)
+                if match:
+                    vsi_num = int(match.group(1))
+                    line_num = int(match.group(2))
+                    mappings['line_to_user_vsi'][line_num] = vsi_num
+            
+            # Parse NetworkVSI
+            elif line.startswith('NetworkVSI-'):
+                match = re.search(r'NetworkVSI-(\d+)\s*=\s*VLAN=([^,]+),\s*PBIT=(\w+)', line)
+                if match:
+                    vsi_num = int(match.group(1))
+                    vlan = match.group(2)
+                    pbit = match.group(3)
+                    mappings['network_vlans'][vsi_num] = {'vlan': vlan, 'pbit': pbit}
+        
+        return mappings
+
 if __name__ == '__main__':
-    print("🚀 Starting Network Configuration Generator Flask Server")
+    print("🚀 Starting Enhanced Network Configuration Generator Flask Server")
     print("📋 Available endpoints:")
     print("   GET  /                - Web interface") 
     print("   POST /api/generate    - Generate configuration from text")
     print("   POST /api/analyze     - Analyze text and extract entities")
-    print("\n🌐 Server running in production mode")
+    print("\n🌐 Server running with enhanced English understanding")
     print("🛑 Press Ctrl+C to stop the server")
     
     # Run in production mode for deployment
